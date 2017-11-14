@@ -62,9 +62,7 @@ sanity_check && do_backup > "${log_file}"
 # Check the number of reported completions.  Each time a backup is processed,
 # an informational "completed OK" and a real version is printed.  At the end of
 # the process, a final full apply is performed, generating another 2 messages.
-#ok_count="$(grep -c 'completed OK' "${log_file}")"
 
-#if (( ${ok_count} == 2 * (${#full_dirs[@]} + ${#incremental_dirs[@]} + 1) )); then
 cat << EOF
 Backup looks to be fully prepared.  Please check the "prepare-progress.log" file
 to verify before continuing.
@@ -87,6 +85,3 @@ Afterward the files are copied, adjust the permissions and restart the service:
         sudo find /var/lib/mysql -type d -exec chmod 750 {} \\;
         sudo systemctl start mysql
 EOF
-#else
-#    error "It looks like something went wrong.  Check the \"${log_file}\" file for more information."
-#fi
