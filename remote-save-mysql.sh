@@ -36,12 +36,12 @@ sanity_check () {
     fi
 
     # Check whether  yesterday directory is here
-    if [ !-d "${parent_dir}/${yesterday}" ]; then
+    if [[ !-d "${parent_dir}/${yesterday}" ]]; then
         error "Yesterday backup directory '${yesterday}' is not found"
     fi
 
     # Check we have a ftp password file (a la postgresql .pgpass)
-    if [ !-f "$ftppassfile" ]; then
+    if [[ !-f "$ftppassfile" ]]; then
         error "Can't find ftppassfile!"
     fi
 }
@@ -68,7 +68,7 @@ remote_save () {
         error "FTP upload failed"
 }
 
-sanity_check && prepare_backup_dir && remote_save > "${log_file}"
+sanity_check && archive_backup_dir && remote_save > "${log_file}"
 
 
 # Check success and print message
