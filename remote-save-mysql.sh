@@ -6,10 +6,10 @@ export LC_ALL=C
 backup_owner="backup"
 parent_dir="/backups/mysql"
 defaults_file="/etc/mysql/backup.cnf"
-ftpsite="ftp.site.org"
-ftpdir="/backups/mysql"
-ftpuser="ftpuser"
-ftppassword="secr3t"
+ftpsite=""
+ftpdir=""
+ftpuser=""
+ftppassword=""
 #######################################################
 todays_dir="${parent_dir}/$(date +%a)"
 yesterday=$(date --date="1 days ago" +%a)
