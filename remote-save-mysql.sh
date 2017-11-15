@@ -62,7 +62,6 @@ sanity_check () {
 }
 
 archive_backup_dir() {
-    # cd /tmp 2>&1 || error "Can't go to ${parent_dir}"
     # Create backup archive
     tar acfz ${archive_name}.tar.gz -C ${parent_dir} --transform s/${yesterday}/${archive_name}/ ${parent_dir}/${yesterday} 2>&1 ||\
         error "tar command failed"
@@ -71,10 +70,9 @@ archive_backup_dir() {
 remote_save () {
     # Check our newly created archive is here
     test -f ${archive_name}.tar.gz || error "Can't find archive in /tmp directory"
-    # Read and get info .ftppass file
-
-    # Push archive to remote ftp site
-    curl -T ${archive_name}.tar.gz ${ftpsite}/${ftpdir} --user ${ftpuser}:${ftppassword} ||\
+    # Push archive to remote ftp site. NOTE THE TRAILING SLASH AFTER $ftpdir. It must be present
+    # in order to succeed upload.
+    curl -T ${archive_name}.tar.gz ${ftpsite}/${ftpdir}/ --user ${ftpuser}:${ftppassword} ||\
         error "FTP upload failed"
 }
 
