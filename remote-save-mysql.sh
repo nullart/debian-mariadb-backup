@@ -6,14 +6,17 @@ export LC_ALL=C
 backup_owner="backup"
 parent_dir="/backups/mysql"
 defaults_file="/etc/mysql/backup.cnf"
-ftppassfile="/root/.ftppass"
+ftpsite="ftp.site.org"
+ftpdir="/backups/mysql"
+ftpuser="ftpuser"
+ftppassword="secr3t"
 #######################################################
 todays_dir="${parent_dir}/$(date +%a)"
-yesterday=$(date --date="1 days ago" +%Y-%m-%d)
-log_file="${todays_dir}/remote-save-progress.log"
-#encryption_key_file="${parent_dir}/encryption_key"
+yesterday=$(date --date="1 days ago" +%a)
+archive_date=$(date --date="1 days ago" +%Y-%m-%d)
+log_file="${parent_dir}/remote-save-progress.log"
 now="$(date +%Y-%m-%d)"
-archive_name="mariabackup-prod-${yesterday}"
+archive_name="mariabackup-prod-${archive_date}"
 
 # Use this to echo to standard error
 error () {
@@ -36,13 +39,25 @@ sanity_check () {
     fi
 
     # Check whether  yesterday directory is here
-    if [[ !-d "${parent_dir}/${yesterday}" ]]; then
+    if [ ! -d "${parent_dir}/${yesterday}" ]; then
         error "Yesterday backup directory '${yesterday}' is not found"
     fi
 
-    # Check we have a ftp password file (a la postgresql .pgpass)
-    if [[ !-f "$ftppassfile" ]]; then
-        error "Can't find ftppassfile!"
+    # Check ftp information are set
+    if [ -z "$ftpsite" ]; then
+        error "ftpsite is not set"
+    fi
+
+    if [ -z "${ftpdir}" ]; then
+        error "ftpdir is not set"
+    fi
+
+    if [ -z "${ftpuser}" ]; then
+        error "ftpuser is not set"
+    fi
+
+    if [ -z "${ftppassword}" ]; then
+        error "ftppassword is not set"
     fi
 }
 
@@ -58,26 +73,15 @@ remote_save () {
     test -f ${archive_name}.tar.gz || error "Can't find archive in /tmp directory"
     # Read and get info .ftppass file
 
-    ftpsite=$( cat ${ftppassfile} | cut -f1 -d: )
-    ftpdir=$( cat ${ftppassfile} | cut -f2 -d: )
-    ftpuser=$( cat ${ftppassfile} | cut -f3 -d: )
-    ftppassword=$( cat ${ftppassfile} | cut -f4 -d: )
-
     # Push archive to remote ftp site
     curl -T ${archive_name}.tar.gz ${ftpsite}/${ftpdir} --user ${ftpuser}:${ftppassword} ||\
         error "FTP upload failed"
 }
 
-sanity_check && archive_backup_dir && remote_save > "${log_file}"
+{ sanity_check && archive_backup_dir && remote_save; } > "${log_file}"
 
 
 # Check success and print message
-
-#if [ "$?" = "0" ]; then
-    printf "Backup successful!\n"
-    printf "Backup created at %s/%s-%s.xbstream\n" "${todays_dir}" "${backup_type}" "${now}"
-#else
-#    error "Backup failure! Check ${log_file} for more information"
-#fi
+printf "Backup %s successfully pushed to remote ftp at %s!\n" "${archive_name}.tar.gz" "${now}"
 
 exit 0
