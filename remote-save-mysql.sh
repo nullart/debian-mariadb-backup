@@ -4,6 +4,7 @@ export LC_ALL=C
 
 ############ EDIT ACCORDING TO YOUR NEEDS #############
 backup_owner="backup"
+backup_group="mysql"
 parent_dir="/backups/mysql"
 defaults_file="/etc/mysql/backup.cnf"
 ftpsite=""
@@ -63,7 +64,8 @@ sanity_check () {
 
 archive_backup_dir() {
     # Create backup archive
-    tar acfz ${archive_name}.tar.gz -C ${parent_dir} --transform s/${yesterday}/${archive_name}/ ${parent_dir}/${yesterday} 2>&1 ||\
+    tar acfz ${archive_name}.tar.gz -C ${parent_dir} --group="${backup_group}" \
+      --transform s/${yesterday}/${archive_name}/ ${parent_dir}/${yesterday} 2>&1 ||\
         error "tar command failed"
 }
 
