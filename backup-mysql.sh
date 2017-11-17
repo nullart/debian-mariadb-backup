@@ -18,14 +18,20 @@ error () {
     exit 1
 }
 
-trap 'error "An unexpected error occurred."' ERR
+trap 'check_exit_status' EXIT
+
+check_exit_status() {
+  if [ "$?" != "0" ];then
+      error "An unexpected error occurred.  Try checking the \"${log_file}\" file for more information."
+  fi
+}
 
 sanity_check () {
     # Check user running the script
     if [ "$USER" != "$backup_owner" ]; then
         error "Script can only be run as the \"$backup_owner\" user"
     fi
-    
+
     # Check whether the encryption key file is available
     #if [ ! -r "${encryption_key_file}" ]; then
     #    error "Cannot read encryption key at ${encryption_key_file}"
@@ -40,7 +46,7 @@ set_options () {
         #"--encrypt-threads=${processors}"
         #"--slave-info"
         #"--incremental"
-        
+
     innobackupex_args=(
         "--defaults-file=${defaults_file}"
         "--extra-lsndir=${todays_dir}"
@@ -50,7 +56,7 @@ set_options () {
         "--parallel=${processors}"
         "--compress-threads=${processors}"
     )
-    
+
     backup_type="full"
 
     # Add option to read LSN (log sequence number) if a full backup has been
@@ -67,26 +73,37 @@ rotate_old () {
     day_dir_to_remove="${parent_dir}/$(date --date="${days_of_backups} days ago" +%a)"
 
     if [ -d "${day_dir_to_remove}" ]; then
-        rm -rf "${day_dir_to_remove}"
+        rm -rf "${day_dir_to_remove}" ||\
+            error "Can't remove ${day_dir}"
     fi
 }
 
-take_backup () {
+prepare_backup_dir() {
     # Make sure today's backup directory is available and take the actual backup
-    mkdir -p "${todays_dir}"
-    find "${todays_dir}" -type f -name "*.incomplete" -delete
-    #innobackupex "${innobackupex_args[@]}" "${todays_dir}" > "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" 2> "${log_file}"
-    mariabackup "${innobackupex_args[@]}" "--target-dir=${todays_dir}" > "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" 2> "${log_file}"
-    
-    mv "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" "${todays_dir}/${backup_type}-${now}.xbstream"
+    mkdir -p "${todays_dir}" 2>&1 || error "mkdir ${todays_dir} failed"
 }
 
-sanity_check && set_options && rotate_old && take_backup
+take_backup () {
+    find "${todays_dir}" -type f -name "*.incomplete" -delete 2>&1 ||\
+        error "find *.incomplete failed"
+    #innobackupex "${innobackupex_args[@]}" "${todays_dir}" > "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" 2> "${log_file}"
+    mariabackup "${innobackupex_args[@]}" > "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" \
+        2> "${log_file}" || error "mariabackup failed"
+
+    mv "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" "${todays_dir}/${backup_type}-${now}.xbstream" 2>&1 ||\
+        error "mv failed"
+}
+
+sanity_check && set_options && rotate_old && prepare_backup_dir && take_backup > "${log_file}"
+
 
 # Check success and print message
-if tail -1 "${log_file}" | grep -q "completed OK"; then
+
+#if [ "$?" = "0" ]; then
     printf "Backup successful!\n"
     printf "Backup created at %s/%s-%s.xbstream\n" "${todays_dir}" "${backup_type}" "${now}"
-else
-    error "Backup failure! Check ${log_file} for more information"
-fi
+#else
+#    error "Backup failure! Check ${log_file} for more information"
+#fi
+
+exit 0

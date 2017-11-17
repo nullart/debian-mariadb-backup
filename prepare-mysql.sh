@@ -17,7 +17,13 @@ error() {
     exit 1
 }
 
-trap 'error "An unexpected error occurred.  Try checking the \"${log_file}\" file for more information."' ERR
+trap 'check_exit_status' EXIT
+
+check_exit_status() {
+  if [ "$?" != "0" ];then
+      error "An unexpected error occurred. Try checking the \"${log_file}\" file for more information."
+  fi
+}
 
 sanity_check () {
     # Check user running the script
@@ -35,49 +41,47 @@ do_backup () {
     # Apply the logs to each of the backups
     printf "Initial prep of full backup %s\n" "${full_backup_dir}"
     #innobackupex --redo-only --apply-log "${full_backup_dir}"
-    mariabackup --apply-log "${full_backup_dir}"
-    
+    mariabackup --apply-log-only --target_dir="${full_backup_dir}" --prepare 2>&1 ||\
+        error "Initial prep of full backup ${full_backup_dir} failed"
+
     for increment in "${incremental_dirs[@]}"; do
         printf "Applying incremental backup %s to %s\n" "${increment}" "${full_backup_dir}"
         #innobackupex --redo-only --apply-log --incremental-dir="${increment}" "${full_backup_dir}"
-        mariabackup --apply-log --incremental-dir="${increment}" "${full_backup_dir}"
+        mariabackup --apply-log-only --incremental-dir="${increment}" --target_dir="${full_backup_dir}" --prepare 2>&1 ||\
+            error "Applying incremental backup ${increment} to ${full_backup_dir} failed"
     done
-    
+
     printf "Applying final logs to full backup %s\n" "${full_backup_dir}"
     #innobackupex --apply-log "${full_backup_dir}"
-    mariabackup --apply-log "${full_backup_dir}"
+    mariabackup --apply-log-only --target_dir="${full_backup_dir}" --prepare 2>&1 ||\
+        error "Applying final logs to full backup ${full_backup_dir} failed"
 }
 
-sanity_check && do_backup > "${log_file}" 2>&1
+sanity_check && do_backup > "${log_file}"
 
 # Check the number of reported completions.  Each time a backup is processed,
 # an informational "completed OK" and a real version is printed.  At the end of
 # the process, a final full apply is performed, generating another 2 messages.
-ok_count="$(grep -c 'completed OK' "${log_file}")"
 
-if (( ${ok_count} == 2 * (${#full_dirs[@]} + ${#incremental_dirs[@]} + 1) )); then
-    cat << EOF
+cat << EOF
 Backup looks to be fully prepared.  Please check the "prepare-progress.log" file
 to verify before continuing.
 
 If everything looks correct, you can apply the restored files.
 
 First, stop MySQL and move or remove the contents of the MySQL data directory:
-    
+
         sudo systemctl stop mysql
         sudo mv /var/lib/mysql/ /tmp/
-    
+
 Then, recreate the data directory and  copy the backup files:
-    
+
         sudo mkdir /var/lib/mysql
         sudo mariabackup --copy-back ${PWD}/$(basename "${full_backup_dir}")
-    
+
 Afterward the files are copied, adjust the permissions and restart the service:
-    
+
         sudo chown -R mysql:mysql /var/lib/mysql
         sudo find /var/lib/mysql -type d -exec chmod 750 {} \\;
         sudo systemctl start mysql
 EOF
-else
-    error "It looks like something went wrong.  Check the \"${log_file}\" file for more information."
-fi
