@@ -1,36 +1,14 @@
 #!/bin/bash
 
-export LC_ALL=C
+source "$(dirname "$0")/config.sh"
+source "$(dirname "$0")/lib.sh"
 
-days_of_backups=3  # Must be less than 7
-backup_owner="backup"
-parent_dir="/backups/mysql"
-defaults_file="/etc/mysql/backup.cnf"
 todays_dir="${parent_dir}/$(date +%a)"
 log_file="${todays_dir}/backup-progress.log"
-#encryption_key_file="${parent_dir}/encryption_key"
 now="$(date +%m-%d-%Y_%H-%M-%S)"
-processors="$(nproc --all)"
-
-# Use this to echo to standard error
-error () {
-    printf "%s: %s\n" "$(basename "${BASH_SOURCE}")" "${1}" >&2
-    exit 1
-}
-
-trap 'check_exit_status' EXIT
-
-check_exit_status() {
-  if [ "$?" != "0" ];then
-      error "An unexpected error occurred.  Try checking the \"${log_file}\" file for more information."
-  fi
-}
 
 sanity_check () {
-    # Check user running the script
-    if [ "$USER" != "$backup_owner" ]; then
-        error "Script can only be run as the \"$backup_owner\" user"
-    fi
+    check_backup_user
 
     # Check whether the encryption key file is available
     #if [ ! -r "${encryption_key_file}" ]; then

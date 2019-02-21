@@ -1,32 +1,13 @@
 #!/bin/bash
 
-export LC_ALL=C
+source "$(dirname "$0")/config.sh"
+source "$(dirname "$0")/lib.sh"
 
-backup_owner="backup"
-#encryption_key_file="/backups/mysql/encryption_key"
 log_file="extract-progress.log"
 number_of_args="${#}"
-processors="$(nproc --all)"
-
-# Use this to echo to standard error
-error () {
-    printf "[ERROR] %s: %s\n" "$(basename "${BASH_SOURCE}")" "${1}" >&2
-    exit 1
-}
-
-trap 'check_exit_status' EXIT
-
-check_exit_status() {
-  if [ "$?" != "0" ];then
-    error "An unexpected error occurred. Try checking the \"${log_file}\" file for more information."
-  fi
-}
 
 sanity_check () {
-    # Check user running the script
-    if [ "${USER}" != "${backup_owner}" ]; then
-        error "Script can only be run as the \"${backup_owner}\" user"
-    fi
+    check_backup_user
 
     # Check whether the qpress binary is installed
     if ! command -v qpress >/dev/null 2>&1; then
