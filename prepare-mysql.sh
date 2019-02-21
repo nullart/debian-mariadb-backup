@@ -24,19 +24,19 @@ do_backup () {
     # Apply the logs to each of the backups
     printf "Initial prep of full backup %s\n" "${full_backup_dir}"
     #innobackupex --redo-only --apply-log "${full_backup_dir}"
-    mariabackup --apply-log-only --target_dir="${full_backup_dir}" --prepare 2>&1 ||\
+    mariabackup --apply-log-only --target-dir="${full_backup_dir}" --prepare 2>&1 ||\
         error "Initial prep of full backup ${full_backup_dir} failed"
 
     for increment in "${incremental_dirs[@]}"; do
         printf "Applying incremental backup %s to %s\n" "${increment}" "${full_backup_dir}"
         #innobackupex --redo-only --apply-log --incremental-dir="${increment}" "${full_backup_dir}"
-        mariabackup --apply-log-only --incremental-dir="${increment}" --target_dir="${full_backup_dir}" --prepare 2>&1 ||\
+        mariabackup --apply-log-only --incremental-dir="${increment}" --target-dir="${full_backup_dir}" --prepare 2>&1 ||\
             error "Applying incremental backup ${increment} to ${full_backup_dir} failed"
     done
 
     printf "Applying final logs to full backup %s\n" "${full_backup_dir}"
     #innobackupex --apply-log "${full_backup_dir}"
-    mariabackup --apply-log-only --target_dir="${full_backup_dir}" --prepare 2>&1 ||\
+    mariabackup --apply-log-only --target-dir="${full_backup_dir}" --prepare 2>&1 ||\
         error "Applying final logs to full backup ${full_backup_dir} failed"
 }
 
