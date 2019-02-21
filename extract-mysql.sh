@@ -33,12 +33,28 @@ do_extraction () {
         printf "\n\nExtracting file %s\n\n" "${file}"
 
         # Extract the directory structure from the backup file
+        mbstream_output="$(mktemp)"
         mkdir --verbose -p "${restore_dir}" 2>&1 ||\
             error "mkdir ${restore_dir} failed"
-        mbstream -x -C "${restore_dir}" < "${file}" 2>&1 ||\
+        mbstream -v -x -C "${restore_dir}" < "${file}" 2>&1 | tee "$mbstream_output" ||\
             error "mbstream failed"
             #"--decrypt=AES256"
             #"--encrypt-key-file=${encryption_key_file}"
+
+        # workaround: mbstream doesn't always exit non-zero on errors
+        if grep -iE 'error|fail' "$mbstream_output"; then
+            error "mbstream failed"
+        fi
+
+        # work around a bug: mbstream creates an extra copy of xtrabackup_info
+        # in the original backup dir
+        #   https://jira.mariadb.org/browse/MDEV-18438
+
+        extra_info_file="$(grep /xtrabackup_info "$mbstream_output" | grep -v decompressing | sed -r 's/\[[^]]+\] ....-..-.. ..:..:.. //')"
+        if [ -n "$extra_info_file" ]; then
+            rm -f "$extra_info_file" || error "failed to remove extra xtrabackup_info file"
+        fi
+
         innobackupex_args=(
             "--parallel=${processors}"
             "--decompress"
