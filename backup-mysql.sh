@@ -3,7 +3,7 @@
 source "$(dirname "$0")/config.sh"
 source "$(dirname "$0")/lib.sh"
 
-todays_dir="${parent_dir}/$(date +%a)"
+todays_dir="${parent_dir}/$(date +%F)"
 log_file="${todays_dir}/backup-progress.log"
 now="$(date +%m-%d-%Y_%H-%M-%S)"
 
@@ -48,7 +48,7 @@ set_options () {
 
 rotate_old () {
     # Remove the oldest backup in rotation
-    day_dir_to_remove="${parent_dir}/$(date --date="${days_of_backups} days ago" +%a)"
+    day_dir_to_remove="${parent_dir}/$(date --date="${days_of_backups} days ago" +%F)"
 
     if [ -d "${day_dir_to_remove}" ]; then
         rm -rf "${day_dir_to_remove}" ||\
