@@ -1,9 +1,9 @@
 #!/bin/bash
 
+log_file="extract-progress.log"
 source "$(dirname "$0")/config.sh"
 source "$(dirname "$0")/lib.sh"
 
-log_file="extract-progress.log"
 number_of_args="${#}"
 
 sanity_check () {
@@ -30,13 +30,13 @@ do_extraction () {
         base_filename="$(basename "${file%.xbstream}")"
         restore_dir="./restore/${base_filename}"
 
-        printf "\n\nExtracting file %s\n\n" "${file}"
+        echo "Extracting file ${file}"
 
         # Extract the directory structure from the backup file
         mbstream_output="$(mktemp)"
-        run mkdir --verbose -p "${restore_dir}" ||\
+        run mkdir --verbose -p "${restore_dir}" >&$log ||\
             error "mkdir ${restore_dir} failed"
-        run mbstream -v -x -C "${restore_dir}" < "${file}" > >(tee "$mbstream_output" | cat >> ${log_file}) ||\
+        run mbstream -v -x -C "${restore_dir}" < "${file}" > >(tee "$mbstream_output" >&$log) 2>&1 ||\
             error "mbstream failed"
             #"--decrypt=AES256"
             #"--encrypt-key-file=${encryption_key_file}"
@@ -62,12 +62,12 @@ do_extraction () {
             "--decompress"
         )
 
-        run mariabackup "${mariabackup_args[@]}" --target-dir="${restore_dir}" >> ${log_file} ||\
+        run mariabackup "${mariabackup_args[@]}" --target-dir="${restore_dir}" >&$log ||\
             error "mariabackup failed"
         run find "${restore_dir}" -name "*.qp" -exec rm {} \; ||\
             error "find *.qp in ${restore_dir} failed"
 
-        printf "\n\nFinished work on %s\n\n" "${file}"
+        echo "Finished work on ${file}"
 
     done
 }
@@ -75,7 +75,7 @@ do_extraction () {
 # truncate log file
 >"${log_file}"
 
-sanity_check && do_extraction "$@"
+sanity_check && do_extraction "$@" 2>&$log
 
 printf "Extraction complete! Backup directories have been extracted to the \"restore\" directory.\n"
 

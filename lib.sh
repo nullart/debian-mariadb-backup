@@ -1,8 +1,18 @@
 trap 'check_exit_status' EXIT
 
-# Use this to echo to standard error
+exec {echo_fd}>&1
+
+mkdir -p "$(dirname "${log_file}")"
+exec {log}>"${log_file}"
+
+echo_and_log() {
+    # make sure the users sees the message and that it goes to the log
+    echo "$@" >&$echo_fd
+    echo "$@" >&$log
+}
+
 error () {
-    printf "[ERROR] %s: %s\n" "$(basename "$0")" "${1}" >&2
+    echo_and_log "[ERROR] $(basename "$0"): $1"
     exit 1
 }
 
@@ -22,13 +32,13 @@ check_backup_user() {
 }
 
 run() {
-    echo ">>>" "$@" >&2
+    echo_and_log ">>>" "$@"
 
-    "$@" 2>&1
+    "$@"
 
     status=$?
     if [ "$status" != "0" ]; then
-        echo ">>> exit code $status" >&2
+        echo_and_log ">>> exit code $status"
     fi
 
     return $status

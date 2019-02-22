@@ -1,11 +1,11 @@
 #!/bin/bash
 
 source "$(dirname "$0")/config.sh"
-source "$(dirname "$0")/lib.sh"
-
 todays_dir="${parent_dir}/$(date +%F)"
 log_file="${todays_dir}/backup-progress.log"
 now="$(date +%m-%d-%Y_%H-%M-%S)"
+
+source "$(dirname "$0")/lib.sh"
 
 sanity_check () {
     check_backup_user
@@ -53,7 +53,7 @@ rotate_old () {
 
 prepare_backup_dir() {
     # Make sure today's backup directory is available and take the actual backup
-    run mkdir -p "${todays_dir}" || error "mkdir ${todays_dir} failed"
+    run mkdir --verbose -p "${todays_dir}" >&$log || error "mkdir ${todays_dir} failed"
 }
 
 take_backup () {
@@ -67,7 +67,7 @@ take_backup () {
         || error "mv failed"
 }
 
-sanity_check && set_options && rotate_old && prepare_backup_dir && take_backup > "${log_file}"
+sanity_check && set_options && rotate_old && prepare_backup_dir && take_backup 2>&$log
 
 printf "Backup successful!\n"
 printf "Backup created at %s/%s-%s.xbstream\n" "${todays_dir}" "${backup_type}" "${now}"

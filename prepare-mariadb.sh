@@ -1,5 +1,6 @@
 #!/bin/bash
 
+log_file="prepare-progress.log"
 source "$(dirname "$0")/config.sh"
 source "$(dirname "$0")/lib.sh"
 
@@ -8,7 +9,6 @@ incremental_dirs=( ./incremental-*/ )
 full_dirs=( ./full-*/ )
 shopt -u nullglob
 
-log_file="prepare-progress.log"
 full_backup_dir="${full_dirs[0]}"
 
 sanity_check () {
@@ -22,22 +22,22 @@ sanity_check () {
 
 do_backup () {
     # Apply the logs to each of the backups
-    printf "Initial prep of full backup %s\n" "${full_backup_dir}"
-    run mariabackup --prepare --target-dir="${full_backup_dir}" --prepare ||\
+    echo "Initial prep of full backup ${full_backup_dir}"
+    run mariabackup --prepare --target-dir="${full_backup_dir}" --prepare >&$log ||\
         error "Initial prep of full backup ${full_backup_dir} failed"
 
     for increment in "${incremental_dirs[@]}"; do
-        printf "Applying incremental backup %s to %s\n" "${increment}" "${full_backup_dir}"
-        run mariabackup --prepare --incremental-dir="${increment}" --target-dir="${full_backup_dir}" --prepare ||\
+        echo "Applying incremental backup ${increment} to ${full_backup_dir}"
+        run mariabackup --prepare --incremental-dir="${increment}" --target-dir="${full_backup_dir}" --prepare >&$log ||\
             error "Applying incremental backup ${increment} to ${full_backup_dir} failed"
     done
 
-    printf "Applying final logs to full backup %s\n" "${full_backup_dir}"
-    run mariabackup --prepare --target-dir="${full_backup_dir}" --prepare ||\
+    echo "Applying final logs to full backup ${full_backup_dir}"
+    run mariabackup --prepare --target-dir="${full_backup_dir}" --prepare >&$log ||\
         error "Applying final logs to full backup ${full_backup_dir} failed"
 }
 
-sanity_check && do_backup > "${log_file}"
+sanity_check && do_backup 2>&$log
 
 cat << EOF
 Backup looks to be fully prepared.  Please check the "prepare-progress.log" file
