@@ -46,8 +46,6 @@ do_extraction () {
             error "mbstream failed"
         fi
 
-        rm -f "$mbstream_output"
-
         # work around a bug: mbstream creates an extra copy of xtrabackup_info
         # in the original backup dir
         #   https://jira.mariadb.org/browse/MDEV-18438
@@ -56,6 +54,8 @@ do_extraction () {
         if [ -n "$extra_info_file" ]; then
             run rm -f "$extra_info_file" || error "failed to remove extra xtrabackup_info file"
         fi
+
+        rm -f "$mbstream_output"
 
         mariabackup_args=(
             "--parallel=${processors}"
