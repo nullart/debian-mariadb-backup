@@ -28,7 +28,7 @@ run() {
 
     status=$?
     if [ "$status" != "0" ]; then
-        echo ">>> exit code $status"
+        echo ">>> exit code $status" >&2
     fi
 
     return $status

@@ -36,7 +36,7 @@ do_extraction () {
         mbstream_output="$(mktemp)"
         run mkdir --verbose -p "${restore_dir}" ||\
             error "mkdir ${restore_dir} failed"
-        run mbstream -v -x -C "${restore_dir}" < "${file}" | tee "$mbstream_output" >> ${log_file} ||\
+        run mbstream -v -x -C "${restore_dir}" < "${file}" > >(tee "$mbstream_output" | cat >> ${log_file}) ||\
             error "mbstream failed"
             #"--decrypt=AES256"
             #"--encrypt-key-file=${encryption_key_file}"
@@ -71,6 +71,9 @@ do_extraction () {
 
     done
 }
+
+# truncate log file
+>"${log_file}"
 
 sanity_check && do_extraction "$@"
 
