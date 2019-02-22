@@ -2,7 +2,7 @@ trap 'check_exit_status' EXIT
 
 # Use this to echo to standard error
 error () {
-    printf "[ERROR] %s: %s\n" "$(basename "${BASH_SOURCE}")" "${1}" >&2
+    printf "[ERROR] %s: %s\n" "$(basename "$0")" "${1}" >&2
     exit 1
 }
 
