@@ -53,30 +53,23 @@ rotate_old () {
 
 prepare_backup_dir() {
     # Make sure today's backup directory is available and take the actual backup
-    run mkdir -p "${todays_dir}" 2>&1 || error "mkdir ${todays_dir} failed"
+    run mkdir -p "${todays_dir}" || error "mkdir ${todays_dir} failed"
 }
 
 take_backup () {
-    run find "${todays_dir}" -type f -name "*.incomplete" -delete 2>&1 ||\
+    run find "${todays_dir}" -type f -name "*.incomplete" -delete ||\
         error "deleting *.incomplete failed"
 
     run mariabackup "${mariabackup_args[@]}" > "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" \
-        2> "${log_file}" || error "mariabackup failed"
+        || error "mariabackup failed"
 
-    run mv "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" "${todays_dir}/${backup_type}-${now}.xbstream" 2>&1 ||\
-        error "mv failed"
+    run mv "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" "${todays_dir}/${backup_type}-${now}.xbstream" \
+        || error "mv failed"
 }
 
 sanity_check && set_options && rotate_old && prepare_backup_dir && take_backup > "${log_file}"
 
-
-# Check success and print message
-
-#if [ "$?" = "0" ]; then
-    printf "Backup successful!\n"
-    printf "Backup created at %s/%s-%s.xbstream\n" "${todays_dir}" "${backup_type}" "${now}"
-#else
-#    error "Backup failure! Check ${log_file} for more information"
-#fi
+printf "Backup successful!\n"
+printf "Backup created at %s/%s-%s.xbstream\n" "${todays_dir}" "${backup_type}" "${now}"
 
 exit 0

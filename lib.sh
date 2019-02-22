@@ -22,9 +22,9 @@ check_backup_user() {
 }
 
 run() {
-    echo ">>> " "$@" >&2
+    echo ">>>" "$@" >&2
 
-    "$@"
+    "$@" 2>&1
 
     status=$?
     if [ "$status" != "0" ]; then

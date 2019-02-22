@@ -34,9 +34,9 @@ do_extraction () {
 
         # Extract the directory structure from the backup file
         mbstream_output="$(mktemp)"
-        run mkdir --verbose -p "${restore_dir}" 2>&1 ||\
+        run mkdir --verbose -p "${restore_dir}" ||\
             error "mkdir ${restore_dir} failed"
-        run mbstream -v -x -C "${restore_dir}" < "${file}" 2>&1 | tee "$mbstream_output" ||\
+        run mbstream -v -x -C "${restore_dir}" < "${file}" | tee "$mbstream_output" >> ${log_file} ||\
             error "mbstream failed"
             #"--decrypt=AES256"
             #"--encrypt-key-file=${encryption_key_file}"
@@ -62,17 +62,17 @@ do_extraction () {
             "--decompress"
         )
 
-        run mariabackup "${mariabackup_args[@]}" --target-dir="${restore_dir}" 2>&1 ||\
+        run mariabackup "${mariabackup_args[@]}" --target-dir="${restore_dir}" >> ${log_file} ||\
             error "mariabackup failed"
-        run find "${restore_dir}" -name "*.qp" -exec rm {} \; 2>&1 ||\
+        run find "${restore_dir}" -name "*.qp" -exec rm {} \; ||\
             error "find *.qp in ${restore_dir} failed"
 
         printf "\n\nFinished work on %s\n\n" "${file}"
 
-    done > "${log_file}" 2>&1
+    done
 }
 
-sanity_check && do_extraction "$@" > "${log_file}"
+sanity_check && do_extraction "$@"
 
 printf "Extraction complete! Backup directories have been extracted to the \"restore\" directory.\n"
 
