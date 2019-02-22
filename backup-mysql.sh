@@ -18,13 +18,6 @@ sanity_check () {
 
 set_options () {
     # List the innobackupex arguments
-    #declare -ga innobackupex_args=(
-        #"--encrypt=AES256"
-        #"--encrypt-key-file=${encryption_key_file}"
-        #"--encrypt-threads=${processors}"
-        #"--slave-info"
-        #"--incremental"
-
     innobackupex_args=(
         "--defaults-file=${defaults_file}"
         "--extra-lsndir=${todays_dir}"
@@ -34,6 +27,7 @@ set_options () {
         "--parallel=${processors}"
         "--compress-threads=${processors}"
     )
+    innobackupex_args+=($extra_backup_args)
 
     backup_type="full"
 
