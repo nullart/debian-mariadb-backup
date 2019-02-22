@@ -31,5 +31,5 @@ run() {
         echo ">>> exit code $status"
     fi
 
-    exit $status
+    return $status
 }
