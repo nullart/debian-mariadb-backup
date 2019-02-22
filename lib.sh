@@ -22,7 +22,7 @@ check_backup_user() {
 }
 
 run() {
-    echo ">>> " "$@"
+    echo ">>> " "$@" >&2
 
     "$@"
 
