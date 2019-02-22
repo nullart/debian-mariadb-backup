@@ -57,12 +57,12 @@ do_extraction () {
             run rm -f "$extra_info_file" || error "failed to remove extra xtrabackup_info file"
         fi
 
-        innobackupex_args=(
+        mariabackup_args=(
             "--parallel=${processors}"
             "--decompress"
         )
 
-        run mariabackup "${innobackupex_args[@]}" --target-dir="${restore_dir}" 2>&1 ||\
+        run mariabackup "${mariabackup_args[@]}" --target-dir="${restore_dir}" 2>&1 ||\
             error "mariabackup failed"
         run find "${restore_dir}" -name "*.qp" -exec rm {} \; 2>&1 ||\
             error "find *.qp in ${restore_dir} failed"

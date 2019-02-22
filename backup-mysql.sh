@@ -17,8 +17,8 @@ sanity_check () {
 }
 
 set_options () {
-    # List the innobackupex arguments
-    innobackupex_args=(
+    # List the mariabackup arguments
+    mariabackup_args=(
         "--defaults-file=${defaults_file}"
         "--extra-lsndir=${todays_dir}"
         "--backup"
@@ -27,7 +27,7 @@ set_options () {
         "--parallel=${processors}"
         "--compress-threads=${processors}"
     )
-    innobackupex_args+=($extra_backup_args)
+    mariabackup_args+=($extra_backup_args)
 
     backup_type="full"
 
@@ -36,7 +36,7 @@ set_options () {
     if grep -q -s "to_lsn" "${todays_dir}/xtrabackup_checkpoints"; then
         backup_type="incremental"
         lsn=$(awk '/to_lsn/ {print $3;}' "${todays_dir}/xtrabackup_checkpoints")
-        innobackupex_args+=( "--incremental-lsn=${lsn}" )
+        mariabackup_args+=( "--incremental-lsn=${lsn}" )
     fi
 }
 
@@ -60,7 +60,7 @@ take_backup () {
     run find "${todays_dir}" -type f -name "*.incomplete" -delete 2>&1 ||\
         error "deleting *.incomplete failed"
 
-    run mariabackup "${innobackupex_args[@]}" > "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" \
+    run mariabackup "${mariabackup_args[@]}" > "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" \
         2> "${log_file}" || error "mariabackup failed"
 
     run mv "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" "${todays_dir}/${backup_type}-${now}.xbstream" 2>&1 ||\
