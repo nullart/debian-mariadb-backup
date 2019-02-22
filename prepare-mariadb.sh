@@ -33,7 +33,7 @@ do_backup () {
     done
 
     echo "Applying final logs to full backup ${full_backup_dir}"
-    run mariabackup --prepare --target-dir="${full_backup_dir}" --prepare >&$log ||\
+    run mariabackup --prepare --target-dir="${full_backup_dir}" >&$log ||\
         error "Applying final logs to full backup ${full_backup_dir} failed"
 }
 
