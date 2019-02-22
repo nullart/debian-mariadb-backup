@@ -34,9 +34,9 @@ do_extraction () {
 
         # Extract the directory structure from the backup file
         mbstream_output="$(mktemp)"
-        mkdir --verbose -p "${restore_dir}" 2>&1 ||\
+        run mkdir --verbose -p "${restore_dir}" 2>&1 ||\
             error "mkdir ${restore_dir} failed"
-        mbstream -v -x -C "${restore_dir}" < "${file}" 2>&1 | tee "$mbstream_output" ||\
+        run mbstream -v -x -C "${restore_dir}" < "${file}" 2>&1 | tee "$mbstream_output" ||\
             error "mbstream failed"
             #"--decrypt=AES256"
             #"--encrypt-key-file=${encryption_key_file}"
@@ -46,13 +46,15 @@ do_extraction () {
             error "mbstream failed"
         fi
 
+        rm -f "$mbstream_output"
+
         # work around a bug: mbstream creates an extra copy of xtrabackup_info
         # in the original backup dir
         #   https://jira.mariadb.org/browse/MDEV-18438
 
         extra_info_file="$(grep /xtrabackup_info "$mbstream_output" | grep -v decompressing | sed -r 's/\[[^]]+\] ....-..-.. ..:..:.. //')"
         if [ -n "$extra_info_file" ]; then
-            rm -f "$extra_info_file" || error "failed to remove extra xtrabackup_info file"
+            run rm -f "$extra_info_file" || error "failed to remove extra xtrabackup_info file"
         fi
 
         innobackupex_args=(
@@ -60,11 +62,9 @@ do_extraction () {
             "--decompress"
         )
 
-        #innobackupex "${innobackupex_args[@]}" "${restore_dir}"
-        mariabackup "${innobackupex_args[@]}" --target-dir="${restore_dir}" 2>&1 ||\
+        run mariabackup "${innobackupex_args[@]}" --target-dir="${restore_dir}" 2>&1 ||\
             error "mariabackup failed"
-        #find "${restore_dir}" -name "*.xbcrypt" -exec rm {} \;
-        find "${restore_dir}" -name "*.qp" -exec rm {} \; 2>&1 ||\
+        run find "${restore_dir}" -name "*.qp" -exec rm {} \; 2>&1 ||\
             error "find *.qp in ${restore_dir} failed"
 
         printf "\n\nFinished work on %s\n\n" "${file}"

@@ -51,24 +51,25 @@ rotate_old () {
     day_dir_to_remove="${parent_dir}/$(date --date="${days_of_backups} days ago" +%F)"
 
     if [ -d "${day_dir_to_remove}" ]; then
-        rm -rf "${day_dir_to_remove}" ||\
+        echo "Removing old backup directory ${day_dir_to_remove}"
+        run rm -rf "${day_dir_to_remove}" ||\
             error "Can't remove ${day_dir}"
     fi
 }
 
 prepare_backup_dir() {
     # Make sure today's backup directory is available and take the actual backup
-    mkdir -p "${todays_dir}" 2>&1 || error "mkdir ${todays_dir} failed"
+    run mkdir -p "${todays_dir}" 2>&1 || error "mkdir ${todays_dir} failed"
 }
 
 take_backup () {
-    find "${todays_dir}" -type f -name "*.incomplete" -delete 2>&1 ||\
-        error "find *.incomplete failed"
-    #innobackupex "${innobackupex_args[@]}" "${todays_dir}" > "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" 2> "${log_file}"
-    mariabackup "${innobackupex_args[@]}" > "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" \
+    run find "${todays_dir}" -type f -name "*.incomplete" -delete 2>&1 ||\
+        error "deleting *.incomplete failed"
+
+    run mariabackup "${innobackupex_args[@]}" > "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" \
         2> "${log_file}" || error "mariabackup failed"
 
-    mv "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" "${todays_dir}/${backup_type}-${now}.xbstream" 2>&1 ||\
+    run mv "${todays_dir}/${backup_type}-${now}.xbstream.incomplete" "${todays_dir}/${backup_type}-${now}.xbstream" 2>&1 ||\
         error "mv failed"
 }
 

@@ -23,28 +23,21 @@ sanity_check () {
 do_backup () {
     # Apply the logs to each of the backups
     printf "Initial prep of full backup %s\n" "${full_backup_dir}"
-    #innobackupex --redo-only --apply-log "${full_backup_dir}"
-    mariabackup --prepare --target-dir="${full_backup_dir}" --prepare 2>&1 ||\
+    run mariabackup --prepare --target-dir="${full_backup_dir}" --prepare 2>&1 ||\
         error "Initial prep of full backup ${full_backup_dir} failed"
 
     for increment in "${incremental_dirs[@]}"; do
         printf "Applying incremental backup %s to %s\n" "${increment}" "${full_backup_dir}"
-        #innobackupex --redo-only --apply-log --incremental-dir="${increment}" "${full_backup_dir}"
-        mariabackup --prepare --incremental-dir="${increment}" --target-dir="${full_backup_dir}" --prepare 2>&1 ||\
+        run mariabackup --prepare --incremental-dir="${increment}" --target-dir="${full_backup_dir}" --prepare 2>&1 ||\
             error "Applying incremental backup ${increment} to ${full_backup_dir} failed"
     done
 
     printf "Applying final logs to full backup %s\n" "${full_backup_dir}"
-    #innobackupex --apply-log "${full_backup_dir}"
-    mariabackup --prepare --target-dir="${full_backup_dir}" --prepare 2>&1 ||\
+    run mariabackup --prepare --target-dir="${full_backup_dir}" --prepare 2>&1 ||\
         error "Applying final logs to full backup ${full_backup_dir} failed"
 }
 
 sanity_check && do_backup > "${log_file}"
-
-# Check the number of reported completions.  Each time a backup is processed,
-# an informational "completed OK" and a real version is printed.  At the end of
-# the process, a final full apply is performed, generating another 2 messages.
 
 cat << EOF
 Backup looks to be fully prepared.  Please check the "prepare-progress.log" file

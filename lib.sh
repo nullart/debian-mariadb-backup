@@ -15,8 +15,21 @@ check_exit_status() {
 }
 
 check_backup_user() {
-    # Check user running the script
-    if [ "$(id -un)" != "${backup_owner}" ]; then
-        error "Script can only be run as the \"${backup_owner}\" user"
+  # Check user running the script
+  if [ "$(id -un)" != "${backup_owner}" ]; then
+    error "Script can only be run as the \"${backup_owner}\" user"
+  fi
+}
+
+run() {
+    echo ">>> " "$@"
+
+    "$@"
+
+    status=$?
+    if [ "$status" != "0" ]; then
+        echo ">>> exit code $status"
     fi
+
+    exit $status
 }
